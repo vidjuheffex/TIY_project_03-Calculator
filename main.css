@@ -1,0 +1,60 @@
+* {
+    box-sizing: border-box;
+}
+
+.calculator {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 600px;
+    background: #b5ddad;
+    font-family: "Helvetica", "Arial", sans-serif;
+    color: white;v
+    font-weight: lighter;
+    font-size: 1.5rem;
+}
+
+
+.wrapper {
+    flex: 1 25%;
+    min-width: 25%;
+    padding-top: 25%;
+    position: relative;
+}
+
+#entry {
+    flex: 3 75%;
+    min-width: 75%;
+    padding-top: 25%;
+    position: relative;
+}
+.inner {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: calc(100% - 1px);
+    height: calc(100% - 1px);
+    background: #61B34F;
+    margin: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn.enabled:hover{
+    opacity: .75;
+}
+
+.operator {
+    background: #82C276;
+    color: #346b29;
+}
+
+.disabled {
+    opacity: .50
+}
