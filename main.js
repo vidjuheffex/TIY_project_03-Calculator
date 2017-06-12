@@ -1,45 +1,81 @@
+var utils = (function(){
+    function resetCalc(input){
+        input.string = "";
+        document.querySelectorAll(".operator").forEach((e, i, a) => {
+            e.classList.add("disabled");
+            stateManager.setState(stateManager.states.OPINPUT);
+        });
+    };
+    
+    return {
+        resetCalc: resetCalc
+    };
+}());
+
 var input=(function(){
     let entryField = document.querySelector(".entry-field");
-    let inputString = "";
+    //input is stored as an object so it can be passed by reference
+    let input = {
+        string: ""
+    };
     let curInputIndex = 0;
     
     function inputRequest(keyString){
         let key = keyString.slice(4);
         
         if(!isNaN(parseInt(key)) || key == "." )  {
+            //if the last state was evaluation, and numbers are entered, start over.
+            if(stateManager.getState() == stateManager.states.EVALRES){
+                utils.resetCalc(input);
+            }
             handleNumberInput(key);
         }
         else{
             handleOperatorInput(key);
         }
-        entryField.innerText = inputString;
-        if (inputString.length > 0){
+
+        //update the entry field text with the current state of our input string
+        entryField.innerText = input.string;
+
+        //if our string now has a value, enable operator buttons
+        if (input.string.length > 0){
             document.querySelectorAll(".operator").forEach((e, i, a) => {
                 e.classList.remove("disabled"); 
             });
         }
-        console.log(key);
-    }
 
+        //if our string is in an operator state, disable solving
+        if (stateManager.getState() == stateManager.states.OPINPUT){
+            let eqbtn = document.querySelector(".equals");
+            let sqrbtn = document.querySelector(".sqr");
+            eqbtn.classList.add("disabled");
+            sqrbtn.classList.add("disabled");
+        }
+        if (stateManager.getState() == stateManager.states.EVALRES){
+            let eqbtn = document.querySelector(".equals");            
+            eqbtn.classList.add("disabled");
+        }
+    }
+                                   
     function handleNumberInput(key){
         //If it wasn't in number input mode, switch to number input mode
         //reset the input index so we know were the current number starts
         if(stateManager.getState() != stateManager.states.NUMINPUT){
             stateManager.setState(stateManager.states.NUMINPUT);
-            curInputIndex = inputString.length-1;
+            curInputIndex = input.string.length-1;
         }
 
         //If it's a number, go ahead and add it to the eval string
         if (key != "."){
-            inputString += key;
+            input.string += key;
         }
 
         //If its a decimal
         else {
             //check for existing decimals from the current numbers start, through the end
             //only add a decimal if an existing one isnt present in the current number
-            if (inputString.substring(curInputIndex).indexOf(".") == -1){
-                inputString += key;
+            if (input.string.substring(curInputIndex).indexOf(".") == -1){
+                input.string += key;
                 //now that we have one, disable the decimal key
                 document.getElementById("key_.").classList.add("disabled");
             }
@@ -47,33 +83,36 @@ var input=(function(){
     }
 
     function handleOperatorInput(key){
-        let patt = new RegExp("[/*+-]");
+        let patt = new RegExp(/[\\/\\*\\+\\%-]/);
         
         //reset the decimal key
         document.getElementById("key_.").classList.remove("disabled");
 
         //if backspace, clear entry
         if (key == "Backspace"){
-            inputString = "";
-            document.querySelectorAll(".operator").forEach(function(e, i, a){
-                e.classList.add("disabled"); 
-            });
+            utils.resetCalc(input);    
         }
-        else if (key == "="){
-            
+        else if (key == "=" && stateManager.getState() == stateManager.states.NUMINPUT){
+            let result = eval(input.string);
+            input.string = String(result);
+            stateManager.setState(stateManager.states.EVALRES);
         }
-        else if (inputString.length > 0 && patt.test(key) && key.length == 1){
-            inputString += " ";
+        else if ((key == "sqr") && (stateManager.getState() == stateManager.states.NUMINPUT || stateManager.getState() == stateManager.states.EVALRES)) {
+            let result = Math.sqrt(eval(input.string));
+            input.string = String(result);
+            stateManager.setState(stateManager.states.EVALRES);
+        }
+        else if (input.string.length > 0 && patt.test(key) && key.length == 1){
+            input.string += " ";
             if(stateManager.getState() != stateManager.states.OPINPUT){
-                inputString += key;
+                input.string += key;
             }
             else {
-                inputString = inputString.slice(0, inputString.length - 3);
-                inputString += key;
+                input.string = input.string.slice(0, input.string.length - 3);
+                input.string += key;
             }
-            inputString += " ";
-            stateManager.setState(stateManager.states.OPINPUT);
-        
+            input.string += " ";
+            stateManager.setState(stateManager.states.OPINPUT);        
         }
     }
 
@@ -98,6 +137,7 @@ var mouse=(function(){
     };
 }());
 
+
 var keyboard=(function(){
     function init () {
         window.addEventListener("keyup", keyManager);
@@ -105,7 +145,13 @@ var keyboard=(function(){
 
     function keyManager(event){
         if (event.key != "Shift"){
-            let keyString = "key_" + event.key;
+            let keyString = "";
+            if(event.key == "Enter"){
+                keyString = "key_=";
+            }
+            else{
+                keyString = "key_" + event.key;
+            }
             input.inputRequest(keyString);
         }
     }
@@ -120,11 +166,12 @@ var stateManager = (function(){
     
     const states = {
         NUMINPUT: 1,
-        OPINPUT:  2
+        OPINPUT:  2,
+        EVALRES: 3
     };
 
     function init(){
-        currentState = states.OPINPUT;
+        currentState = states.EVALRES;
     }
     
    
@@ -159,7 +206,10 @@ var core =(function() {
     return {
         init: init
     };
-    
 }());
 
 core.init();
+
+
+
+
